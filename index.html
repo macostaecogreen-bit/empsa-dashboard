@@ -632,70 +632,66 @@ function renderAttn() {
 
 // ── BOARD ─────────────────────────────────────────────────────────────────────
 function renderBoard() {
-  const d=DATA[curCo]; if(!d){document.getElementById("board").innerHTML="";return;}
-  console.log("renderBoard:", curCo, "raw projects:", (d.projects||[]).length);
-  if((d.projects||[]).length>0) {
-    const fp = d.projects[0];
-    console.log("First project keys:", Object.keys(fp));
-    console.log("First project:", fp);
-  }
+  const d = DATA[curCo];
+  if (!d) { document.getElementById("board").innerHTML = ""; return; }
   const validId = id => id && /^(PROJ|PLAN|MACAM|GEDANA|MARES|WDC)/.test(String(id).trim());
-  const projs=(d.projects||[]).filter(r=>validId(r["ID"]||r["ID Proyecto"]));
-  console.log("Filtered projs:", projs.length);
-  const acts=(d.activities||[]).filter(r=>validId(r["ID Proyecto"]||r["Project ID"]));
-  if(!projs.length){document.getElementById("board").innerHTML='<p style="color:var(--ink3);font-style:italic;padding:20px">No hay proyectos cargados.</p>';return;}
-  let html="";
-  projs.forEach((p,i)=>{
-    const pid=(p["ID"]||p["ID Proyecto"]||"").trim();
-    let steps=acts.filter(r=>(r["ID Proyecto"]||"")==pid);
-    if(filter==="ops")steps=steps.filter(r=>{const t=r["Equipo"]||r["Team"]||"";return t==="Finance & Operations"||t==="Finanzas & Operaciones"||t.toLowerCase().includes("finance");});
-    if(filter==="rel")steps=steps.filter(r=>!(r["Equipo"]||r["Team"]||"").includes("Finance"));
-    if(filter==="off")steps=steps.filter(r=>isOff(r["Estado"]||""));
-    if(filter!=="all"&&!steps.length&&acts.filter(r=>(r["ID Proyecto"]||r["Project ID"]||"")==pid).length) return;
-    const allSteps=acts.filter(r=>(r["ID Proyecto"]||"")==pid);
-    const offCount=allSteps.filter(r=>isOff(r["Estado"]||"")).length;
-    const pct=parseInt(p["% Avance"]||p["%Avance"]||p["% Progress"]||"0")||0;
-    const name=p["Nombre del Proyecto"]||p["Project Name"]||p["Nombre"]||pid;
-    const notes=p["Notas / Contexto"]||p["Notes / Contexto"]||p["Notes"]||"";
-    const openClass=offCount||filter!=="all"?"open":"";
-    html+=`<div class="proj ${openClass} ${offCount?"has-red":""}" id="pb${i}">
-      <div class="phead" onclick="document.getElementById('pb${i}').classList.toggle('open')">
-        <span class="chev">▶</span>
-        <span style="flex:1;min-width:0">
-          <span class="pname">${name}</span>
-          ${notes?`<div class="pcontext">${notes}</div>`:""}
-        </span>
-        <span class="pctblock">
-          <span class="pct-bar"><i style="width:${pct}%;background:${pctColor(pct)}"></i></span>
-          <span class="pct-n" style="color:${pctColor(pct)}">${pct}%</span>
-        </span>
-        <span class="pmeta">${offCount?`<span class="chip red">${offCount} con retraso</span>`:""}</span>
-      </div>`;
-    if(steps.length){
-      html+="<div class='steps'>";
-      steps.forEach(s=>{
-        const team=s["Equipo"]||s["Team"]||""; const fn=fnClass(team);
-        const task=s["Descripción de la Tarea"]||s["Task Description"]||"";
-        const owner=s["Responsable"]||s["Owner"]||"";
-        const due=s["Fecha Límite"]||s["Due Date"]||"";
-        const status=s["Estado"]||s["Status"]||"";
-        const note=s["Notas / Comentarios"]||s["Notes"]||"";
-        html+=`<div class="step">
-          <span class="fnbar ${fn}"></span>
-          <span><span class="stask">${task}</span>${note?`<div class="snote">${note}</div>`:""}</span>
-          <span class="sright">
-            <span class="srow">${owner?`<span class="owner" style="${ownerStyle(owner)}">${owner}</span>`:""} ${due?`<span class="due">${fmtDate(due)}</span>`:""}</span>
-            <span class="status ${scls(status)}">${status||"—"}</span>
-          </span>
-        </div>`;
+  const projs = (d.projects||[]).filter(r => validId(r["ID"]||r["ID Proyecto"]));
+  const acts  = (d.activities||[]).filter(r => validId(r["ID Proyecto"]||r["Project ID"]));
+  if (!projs.length) {
+    document.getElementById("board").innerHTML = '<p style="color:var(--ink3);font-style:italic;padding:20px">No hay proyectos cargados.</p>';
+    return;
+  }
+  let html = "";
+  projs.forEach((p, i) => {
+    const pid = (p["ID"] || p["ID Proyecto"] || "").trim();
+    let steps = acts.filter(r => (r["ID Proyecto"]||"").trim() === pid);
+    if (filter === "ops") steps = steps.filter(r => { const t = r["Equipo"]||""; return t === "Finance & Operations" || t.toLowerCase().includes("finance"); });
+    if (filter === "rel") steps = steps.filter(r => { const t = r["Equipo"]||""; return t === "Relationships & Sales"; });
+    if (filter === "off") steps = steps.filter(r => isOff(r["Estado"]||""));
+    const allSteps = acts.filter(r => (r["ID Proyecto"]||"").trim() === pid);
+    const offCount = allSteps.filter(r => isOff(r["Estado"]||"")).length;
+    const pctRaw = p["% Avance"] || p["%Avance"] || p["% Progress"] || "0";
+    const pct = parseInt(pctRaw) || 0;
+    const name = p["Nombre del Proyecto"] || p["Project Name"] || pid;
+    const notes = p["Notas / Contexto"] || p["Notes"] || "";
+    const openClass = (offCount || filter !== "all") ? "open" : "";
+    const hasRed = offCount ? "has-red" : "";
+    html += '<div class="proj ' + openClass + ' ' + hasRed + '" id="pb' + i + '">';
+    html += '<div class="phead" onclick="document.getElementById('pb' + i + '').classList.toggle('open')">';
+    html += '<span class="chev">&#9658;</span>';
+    html += '<span style="flex:1;min-width:0"><span class="pname">' + name + '</span>';
+    if (notes) html += '<div class="pcontext">' + notes + '</div>';
+    html += '</span>';
+    html += '<span class="pctblock"><span class="pct-bar"><i style="width:' + pct + '%;background:' + pctColor(pct) + '"></i></span>';
+    html += '<span class="pct-n" style="color:' + pctColor(pct) + '">' + pct + '%</span></span>';
+    html += '<span class="pmeta">' + (offCount ? '<span class="chip red">' + offCount + ' con retraso</span>' : '') + '</span>';
+    html += '</div>';
+    if (steps.length) {
+      html += '<div class="steps">';
+      steps.forEach(s => {
+        const team = s["Equipo"] || s["Team"] || "";
+        const fn = fnClass(team);
+        const task = s["Descripción de la Tarea"] || s["Task Description"] || "";
+        const owner = s["Responsable"] || s["Owner"] || "";
+        const due = s["Fecha Límite"] || s["Due Date"] || "";
+        const status = s["Estado"] || s["Status"] || "";
+        const note = s["Notas / Comentarios"] || s["Notes"] || "";
+        html += '<div class="step">';
+        html += '<span class="fnbar ' + fn + '"></span>';
+        html += '<span><span class="stask">' + task + '</span>' + (note ? '<div class="snote">' + note + '</div>' : '') + '</span>';
+        html += '<span class="sright"><span class="srow">';
+        if (owner) html += '<span class="owner" style="' + ownerStyle(owner) + '">' + owner + '</span>';
+        if (due) html += '<span class="due">' + fmtDate(due) + '</span>';
+        html += '</span><span class="status ' + scls(status) + '">' + (status || "—") + '</span></span>';
+        html += '</div>';
       });
-      html+="</div>";
+      html += '</div>';
     } else {
-      html+=`<div class="steps"><div class="empty">${pct}% completado · ${notes||"Sin tareas detalladas."}</div></div>`;
+      html += '<div class="steps"><div class="empty">' + pct + '% completado · ' + (notes || "Sin tareas detalladas.") + '</div></div>';
     }
-    html+="</div>";
+    html += '</div>';
   });
-  document.getElementById("board").innerHTML=html||'<p style="color:var(--ink3);font-style:italic;padding:20px">Sin resultados para este filtro.</p>';
+  document.getElementById("board").innerHTML = html || '<p style="color:var(--ink3);font-style:italic;padding:20px">Sin resultados.</p>';
 }
 
 document.getElementById("filter").addEventListener("click",e=>{
