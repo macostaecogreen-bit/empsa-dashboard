@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>EMPSA · Command View</title>
+<style>
+/* ── Login ── */
+#login-screen{position:fixed;inset:0;background:#1B3A5C;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:20px}
+#login-screen.hidden{display:none}
+.login-box{background:#fbf8f2;border-radius:16px;padding:40px 48px;max-width:360px;width:90%;text-align:center}
+.login-box h2{font-family:'Fraunces',Georgia,serif;font-size:26px;color:#1B3A5C;margin-bottom:6px}
+.login-box p{font-size:13px;color:#9a8e7d;margin-bottom:24px;font-style:italic}
+.login-box input{width:100%;padding:12px 16px;border:1px solid #e3dac9;border-radius:10px;font-size:15px;font-family:inherit;box-sizing:border-box;margin-bottom:12px;outline:none}
+.login-box input:focus{border-color:#2E6DA4}
+.login-box button{width:100%;padding:13px;background:#1B3A5C;color:#fff;border:0;border-radius:10px;font-size:15px;font-family:'Fraunces',Georgia,serif;cursor:pointer;font-weight:500}
+.login-box button:hover{background:#2E6DA4}
+.login-error{color:#A32D2D;font-size:13px;margin-top:6px;display:none}
+.login-logo{font-family:'Fraunces',Georgia,serif;font-size:32px;color:#fff;font-weight:600;letter-spacing:-0.02em}
+.login-sub{font-size:13px;color:#D6E4F0;font-style:italic}
+
+/* ── Loading ── */
+#loading{position:fixed;inset:0;background:#f4efe7;display:flex;align-items:center;justify-content:center;z-index:9998;flex-direction:column;gap:12px}
+#loading.hidden{display:none}
+.spinner{width:36px;height:36px;border:3px solid #e3dac9;border-top-color:#2E6DA4;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-family:'Fraunces',Georgia,serif;color:#5d5347;font-size:15px}
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Newsreader:ital,wght@0,400;0,500;1,400;1,500&display=swap');
+:root{
+  --bg:#f4efe7;--paper:#fbf8f2;--ink:#2a2420;--ink2:#5d5347;--ink3:#9a8e7d;--line:#e3dac9;
+  --gold:#b07c2e;--goldsoft:#f3e6cd;--green:#5c7a4a;--greensoft:#e6efdd;
+  --red:#a8492f;--redsoft:#f4e0d8;--redbright:#c0392b;
+  --blue:#3f6184;--bluesoft:#dee7f0;--rel:#8a5a3c;--relsoft:#f0e2d6;
+  --ops:#3f6184;--opssoft:#dee7f0;
+  --shadow:0 1px 3px rgba(60,45,25,.08),0 8px 28px rgba(60,45,25,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Newsreader',Georgia,serif;line-height:1.5;min-height:100vh;
+  background-image:radial-gradient(circle at 12% 8%,rgba(176,124,46,.05),transparent 42%),
+  radial-gradient(circle at 88% 92%,rgba(63,97,132,.05),transparent 45%)}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
+.hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:4px}
+.eyebrow{font-style:italic;color:var(--gold);font-size:15px;margin-bottom:4px}
+h1{font-family:'Fraunces';font-weight:600;font-size:clamp(26px,4vw,38px);line-height:1.02;letter-spacing:-.01em}
+.co-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.co-label{font-size:12px;color:var(--ink3);font-style:italic}
+.co-sel{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.co-btn{font-family:'Fraunces';font-weight:500;font-size:13px;border:1px solid var(--line);
+  background:var(--paper);color:var(--ink2);padding:6px 14px;border-radius:99px;cursor:pointer;transition:.15s;box-shadow:var(--shadow)}
+.co-btn.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.co-btn:hover:not(.on){background:var(--goldsoft);border-color:var(--gold)}
+.pulse{background:linear-gradient(135deg,var(--ink) 0%,#3d2e26 100%);border-radius:16px;padding:16px 22px;margin:18px 0 6px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:var(--shadow)}
+.pulse-icon{font-size:22px;flex-shrink:0}
+.pulse-text{flex:1;font-size:15px;color:#e8dfd0;line-height:1.5}
+.pulse-text strong{color:#fff;font-family:'Fraunces';font-weight:600}
+.pulse-ts{font-size:12px;color:var(--ink3);font-style:italic;flex-shrink:0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:11px;margin:16px 0}
+.kpi{background:var(--paper);border:1px solid var(--line);border-radius:13px;padding:13px 15px;box-shadow:var(--shadow)}
+.kpi .n{font-family:'Fraunces';font-weight:600;font-size:26px;line-height:1}
+.kpi .l{font-size:12px;color:var(--ink2);margin-top:5px}
+.kpi.gold .n{color:var(--gold)}.kpi.red .n{color:var(--redbright)}.kpi.green .n{color:var(--green)}
+.kpi.rel .n{color:var(--rel)}.kpi.ops .n{color:var(--ops)}
+.kpi.red{border-color:#e8cdc2;background:linear-gradient(160deg,#fdf4f1,var(--paper) 60%)}
+.attn{background:linear-gradient(160deg,#fae8e2,var(--paper) 65%);border:1.5px solid #e0b8aa;border-radius:16px;padding:18px 20px;margin-bottom:12px;box-shadow:var(--shadow)}
+.attn-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.attn-dot{width:12px;height:12px;border-radius:50%;background:var(--redbright);box-shadow:0 0 0 3px rgba(192,57,43,.2);flex-shrink:0}
+.attn h3{font-family:'Fraunces';font-weight:600;font-size:18px;color:var(--redbright)}
+.attn ul{list-style:none;display:flex;flex-direction:column;gap:7px}
+.attn li{display:flex;align-items:center;gap:9px;font-size:14px;background:var(--paper);border:1px solid #e8ccc2;border-left:4px solid var(--redbright);border-radius:9px;padding:9px 13px}
+.attn li .proj{font-style:italic;color:var(--ink3);font-size:12.5px;margin-left:auto;white-space:nowrap}
+.fpill{font-size:10.5px;padding:2px 9px;border-radius:99px;font-family:'Fraunces';font-weight:500;white-space:nowrap}
+.fpill.rel{background:var(--relsoft);color:var(--rel)}.fpill.ops{background:var(--opssoft);color:var(--ops)}
+.viewtabs{display:flex;gap:6px;margin:20px 0 6px;flex-wrap:wrap}
+.viewtabs button{font-family:'Fraunces';font-weight:500;font-size:15px;border:1px solid var(--line);background:var(--paper);color:var(--ink2);padding:9px 20px;border-radius:11px;cursor:pointer;transition:.15s;box-shadow:var(--shadow)}
+.viewtabs button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.view{display:none}.view.on{display:block}
+.controls{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:14px 0}
+.seg{display:flex;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:4px;box-shadow:var(--shadow);flex-wrap:wrap}
+.seg button{font-family:'Newsreader';font-size:14px;border:0;background:transparent;color:var(--ink2);padding:7px 13px;border-radius:8px;cursor:pointer;transition:.15s}
+.seg button.on{background:var(--ink);color:var(--paper)}
+.proj{background:var(--paper);border:1px solid var(--line);border-radius:16px;margin-bottom:12px;box-shadow:var(--shadow);overflow:hidden}
+.proj.has-red{border-color:#ddb8ae}
+.phead{padding:16px 18px;cursor:pointer;display:flex;align-items:center;gap:14px}
+.phead:hover{background:#f7f1e6}
+.chev{font-size:13px;color:var(--ink3);transition:.2s;flex-shrink:0}
+.proj.open .chev{transform:rotate(90deg)}
+.pname{font-family:'Fraunces';font-weight:600;font-size:18px;flex:1;min-width:0}
+.pctblock{flex:0 0 140px;display:flex;align-items:center;gap:9px}
+.pct-bar{flex:1;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.pct-bar i{display:block;height:100%;border-radius:99px;transition:width .4s}
+.pct-n{font-family:'Fraunces';font-weight:600;font-size:14px;min-width:34px;text-align:right}
+.pmeta{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.chip{font-size:11px;padding:3px 10px;border-radius:99px;font-style:italic;font-weight:500}
+.chip.red{background:var(--redsoft);color:var(--redbright);border:1px solid #e8c0b4}
+.chip.gray{background:#eee7da;color:var(--ink3)}
+.stale{font-size:11px;color:var(--ink3);font-style:italic;padding:2px 8px;background:#f0e8db;border-radius:99px;border:1px solid var(--line)}
+.stale.warn{background:#fdf0e8;color:var(--gold);border-color:#e8c88a}
+.pcontext{font-size:13px;color:var(--ink3);font-style:italic;margin-top:2px}
+.steps{border-top:1px solid var(--line);display:none}
+.proj.open .steps{display:block}
+.step{display:grid;grid-template-columns:8px 1fr auto;gap:12px;align-items:start;padding:12px 18px;border-bottom:1px solid #efe7d7}
+.step:last-child{border-bottom:0}
+.step:hover{background:#faf6ee}
+.fnbar{width:6px;border-radius:99px;align-self:stretch;min-height:20px;margin-top:2px;flex-shrink:0}
+.fnbar.rel{background:var(--rel)}.fnbar.ops{background:var(--ops)}
+.stask{font-size:14.5px;line-height:1.35}
+.snote{font-size:12.5px;color:var(--ink3);font-style:italic;margin-top:3px}
+.sright{display:flex;flex-direction:column;align-items:flex-end;gap:5px;white-space:nowrap}
+.srow{display:flex;align-items:center;gap:6px}
+.owner{font-size:11.5px;padding:3px 10px;border-radius:99px;font-family:'Fraunces';font-weight:500}
+.due{font-size:12px;color:var(--ink3);font-style:italic}
+.status{font-size:11.5px;padding:3px 11px;border-radius:99px;font-family:'Fraunces';font-weight:500}
+.status.Completado{background:var(--greensoft);color:var(--green)}
+.status.Encurso{background:#e4eed9;color:var(--green)}
+.status.Conretraso{background:var(--redsoft);color:var(--redbright);font-weight:600;border:1px solid #e8bfb4}
+.status.Noiniciado{background:#eee7da;color:var(--ink3)}
+.status.Enpausa{background:#faeeda;color:#854F0B}
+.empty{padding:16px 18px;font-style:italic;color:var(--ink3);font-size:13.5px}
+.person-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:4px}
+.person-card{background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+.person-card.has-red{border-color:#ddb8ae}
+.person-head{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+.person-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces';font-weight:600;font-size:16px;flex-shrink:0}
+.person-name{font-family:'Fraunces';font-weight:600;font-size:17px;flex:1}
+.person-counts{display:flex;gap:6px}
+.pcount{font-size:11px;padding:2px 8px;border-radius:99px;font-family:'Fraunces';font-weight:500}
+.pcount.red{background:var(--redsoft);color:var(--redbright)}
+.pcount.green{background:var(--greensoft);color:var(--green)}
+.pcount.gray{background:#eee7da;color:var(--ink3)}
+.person-items{padding:10px 0}
+.pitem{padding:9px 18px;display:flex;align-items:flex-start;gap:10px;border-bottom:1px solid #f0e8db}
+.pitem:last-child{border-bottom:0}
+.pitem:hover{background:#faf6ee}
+.pitem-bar{width:5px;border-radius:99px;align-self:stretch;min-height:16px;margin-top:2px;flex-shrink:0}
+.pitem-bar.rel{background:var(--rel)}.pitem-bar.ops{background:var(--ops)}
+.pitem-task{font-size:13.5px;line-height:1.35;flex:1}
+.pitem-proj{font-size:11.5px;color:var(--ink3);font-style:italic;margin-top:2px}
+.pitem-status{font-size:11px;padding:2px 8px;border-radius:99px;font-family:'Fraunces';font-weight:500;white-space:nowrap;flex-shrink:0;margin-top:2px}
+.pitem-status.Conretraso{background:var(--redsoft);color:var(--redbright)}
+.pitem-status.Completado{background:var(--greensoft);color:var(--green)}
+.pitem-status.Encurso{background:#e4eed9;color:var(--green)}
+.pitem-status.Noiniciado{background:#eee7da;color:var(--ink3)}
+.cal-filter{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 4px;align-items:center}
+.cal-filter-label{font-size:12px;color:var(--ink3);font-style:italic;margin-right:2px}
+.cal-pill{font-family:'Fraunces';font-weight:500;font-size:12px;border:1px solid var(--line);background:var(--paper);color:var(--ink2);padding:4px 12px;border-radius:99px;cursor:pointer;transition:.15s;box-shadow:var(--shadow);white-space:nowrap}
+.cal-pill:hover:not(.on){background:var(--goldsoft);border-color:var(--gold)}
+.cal-pill.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.cal-nav{display:flex;align-items:center;gap:14px;margin:18px 0 14px}
+.cal-nav button{border:1px solid var(--line);background:var(--paper);color:var(--ink);font-family:'Fraunces';font-size:18px;width:40px;height:40px;border-radius:11px;cursor:pointer;box-shadow:var(--shadow)}
+.cal-nav button:hover{background:var(--gold);color:#fff}
+.cal-nav h2{font-family:'Fraunces';font-weight:600;font-size:24px;letter-spacing:-.01em}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-dow{text-align:center;font-family:'Fraunces';font-weight:600;font-size:12px;color:var(--ink3);padding:6px 0;text-transform:uppercase;letter-spacing:.05em}
+.cal-cell{background:var(--paper);border:1px solid var(--line);border-radius:11px;min-height:96px;padding:7px 8px;display:flex;flex-direction:column;gap:4px}
+.cal-cell.blank{background:transparent;border:0}
+.cal-cell.today{border-color:var(--gold);box-shadow:0 0 0 2px var(--goldsoft)}
+.cal-date{font-family:'Fraunces';font-weight:600;font-size:13px;color:var(--ink2)}
+.cal-cell.today .cal-date{color:var(--gold)}
+.ev{font-size:11px;line-height:1.25;padding:3px 6px;border-radius:6px;border-left:3px solid;cursor:default}
+.ev.rel{background:var(--relsoft);border-color:var(--rel);color:#5e3d28}
+.ev.ops{background:var(--opssoft);border-color:var(--ops);color:#2c4660}
+.ev.off{outline:2px solid var(--redbright);outline-offset:-1px}
+.ev .evp{font-style:italic;opacity:.7;display:block;font-size:10px}
+.ev .evown{font-weight:600;font-size:10px;display:block;margin-top:1px}
+.cal-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:12.5px;color:var(--ink2)}
+.cal-legend span{display:inline-flex;align-items:center;gap:7px}
+.ldot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+.cash-intro{font-size:15px;color:var(--ink2);margin-bottom:14px;line-height:1.6;max-width:720px}
+#cash-table{border-collapse:collapse;width:100%;font-size:13px;background:var(--paper);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+#cash-table th,#cash-table td{padding:8px 11px;text-align:right;border-bottom:1px solid #efe7d7;white-space:nowrap}
+#cash-table th:first-child,#cash-table td:first-child{text-align:left;font-family:'Newsreader'}
+#cash-table thead th{font-family:'Fraunces';font-weight:600;font-size:12px;color:var(--ink2);background:#f3ecdf}
+#cash-table .grp{font-family:'Fraunces';font-weight:600;color:var(--ink);background:#faf4e9}
+#cash-table .in td{color:var(--green)}
+#cash-table .out td{color:var(--red)}
+#cash-table .bal td{font-family:'Fraunces';font-weight:600;border-top:2px solid var(--line)}
+#cash-table .bal td.neg{color:var(--redbright)}
+#cash-table .bal td.pos{color:var(--green)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin:14px 0 4px;font-size:13px;color:var(--ink2)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.sync-bar{font-size:12px;color:var(--ink3);font-style:italic;margin-top:8px;display:flex;align-items:center;gap:8px}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
+.sync-dot.loading{background:var(--gold);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+footer{margin-top:38px;text-align:center;font-size:13px;color:var(--ink3);font-style:italic}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-logo">EMPSA</div>
+  <div class="login-sub">command view · acceso restringido</div>
+  <div class="login-box">
+    <h2>Bienvenido</h2>
+    <p>Ingresa la contraseña para acceder al dashboard</p>
+    <input type="password" id="pwd-input" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button onclick="doLogin()">Ingresar</button>
+    <div class="login-error" id="login-error">Contraseña incorrecta</div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text">Cargando datos desde Drive…</div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="wrap" id="dashboard" style="display:none">
+  <div class="hdr">
+    <div>
+      <div class="eyebrow">EMPSA Group · command view</div>
+      <h1 id="co-title">EMPSA</h1>
+    </div>
+    <div class="co-wrap">
+      <span class="co-label">Empresa</span>
+      <div class="co-sel" id="co-sel"></div>
+    </div>
+  </div>
+  <div class="sync-bar"><span class="sync-dot" id="sync-dot"></span><span id="sync-label">Conectando…</span></div>
+  <div class="pulse" id="pulse"><span class="pulse-icon">⚡</span><span class="pulse-text" id="pulse-text">Cargando…</span><span class="pulse-ts" id="pulse-ts"></span></div>
+  <div class="kpis" id="kpis"></div>
+  <div class="attn" id="attn"></div>
+  <div class="viewtabs">
+    <button data-v="board" class="on" onclick="switchView('board')">Projects</button>
+    <button data-v="people" onclick="switchView('people')">By person</button>
+    <button data-v="cal" onclick="switchView('cal')">Calendar</button>
+    <button data-v="cash" onclick="switchView('cash')">Cashflow</button>
+  </div>
+  <div class="view on" id="view-board">
+    <div class="legend">
+      <span><span class="ldot" style="background:var(--ops)"></span>Finance &amp; Operations</span>
+      <span><span class="ldot" style="background:var(--rel)"></span>Relationships &amp; Sales</span>
+    </div>
+    <div class="controls"><div class="seg" id="filter">
+      <button data-f="all" class="on">Todos</button>
+      <button data-f="ops">Finance &amp; Ops</button>
+      <button data-f="rel">Rel &amp; Sales</button>
+      <button data-f="off">Con retraso</button>
+    </div></div>
+    <div id="board"></div>
+  </div>
+  <div class="view" id="view-people"><div class="person-grid" id="person-grid"></div></div>
+  <div class="view" id="view-cal">
+    <div class="cal-nav">
+      <button onclick="calMove(-1)">‹</button>
+      <h2 id="cal-title"></h2>
+      <button onclick="calMove(1)">›</button>
+    </div>
+    <div class="cal-filter" id="cal-filter"></div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-legend">
+      <span><span class="ldot" style="background:var(--ops)"></span>Finance &amp; Ops</span>
+      <span><span class="ldot" style="background:var(--rel)"></span>Rel &amp; Sales</span>
+    </div>
+  </div>
+  <div class="view" id="view-cash">
+    <p class="cash-intro">Obligaciones y compromisos financieros del período. Los datos se leen directamente desde Finance_GRUPO en Drive.</p>
+    <div id="cash-kpis" class="kpis"></div>
+    <div style="overflow-x:auto"><table id="cash-table"></table></div>
+  </div>
+  <footer>EMPSA Group · Command View · datos en tiempo real desde Google Drive</footer>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const PASSWORD = "EMPSA2026";
+const SHEET_IDS = {
+  EMPSA:  "1OyXM5aUwg9MI9CKx7_GqMKKHbcDLcz5bfeH11L_WAas",
+  GEDANA: "1UHeSqKQPTc0NmAHAus-aAD2Vpp31YyNK2XU-HgLQGwE",
+  MACAM:  "188Bck8F4uVGNvz0PMVgR5dJmb9jdJp7XxkDpWJvJPqo",
+  MARES:  "1cHdxgcH9q8Z92Fzv5sbZOLZhwYiEhCuzpBj_WoViCKY",
+  WDC:    "1T32aFbr8CW-VVH-XFWjCWLe2pU4KdVn_lyw-8BssrjU",
+  FINANCE:"1ffGt8U48-mXeF7TGbSk7lvbm5r6p6Ymi04XG0C6ccKA",
+};
+const COMPANIES = ["EMPSA","GEDANA","MACAM","MARES","WDC"];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let curCo = "EMPSA";
+let calFilter = "all";
+let calRef = new Date();
+let filter = "all";
+let DATA = {};  // DATA[company] = { projects:[], activities:[], critical:[] }
+let FINANCE_DATA = {};
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+function doLogin() {
+  const val = document.getElementById("pwd-input").value;
+  if (val === PASSWORD) {
+    document.getElementById("login-screen").classList.add("hidden");
+    initDashboard();
+  } else {
+    document.getElementById("login-error").style.display = "block";
+    document.getElementById("pwd-input").value = "";
+  }
+}
+
+// ── GOOGLE SHEETS READER ──────────────────────────────────────────────────────
+async function readSheet(sheetId, tabName) {
+  const enc = encodeURIComponent(tabName);
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${enc}&range=A3:ZZ&headers=1`;
+  try {
+    const res = await fetch(url, {mode:"cors"});
+    const text = await res.text();
+    if (!text || !text.includes("google.visualization")) return [];
+    const json = JSON.parse(text.substring(47).slice(0,-2));
+    if (!json.table || !json.table.rows) return [];
+    const cols = json.table.cols.map(c => c.label || "");
+    // Find real header row - first row with multiple non-empty labels
+    const nonEmpty = cols.filter(c=>c.trim()).length;
+    if (nonEmpty < 2) return [];
+    const result = [];
+    for (const row of json.table.rows) {
+      if (!row.c) continue;
+      const obj = {};
+      let filled = 0;
+      row.c.forEach((cell, i) => {
+        const col = cols[i];
+        if (!col) return;
+        const val = cell ? (cell.f || (cell.v !== null && cell.v !== undefined ? String(cell.v) : "")) : "";
+        obj[col] = val;
+        if (val.trim()) filled++;
+      });
+      // Only skip completely empty rows
+      if (filled === 0) continue;
+      // Skip section header rows (very long text in first col, no ID pattern)
+      const firstKey = Object.keys(obj)[0] || "";
+      const firstVal = obj[firstKey] || "";
+      if (firstVal.length > 100 && !firstVal.match(/^(PROJ|PLAN|MACAM|GEDANA|MARES|WDC|OBL|BNK|LIT)/)) continue;
+      // Skip rows where the value equals the column name (header repeat)
+      if (firstVal === firstKey) continue;
+      result.push(obj);
+    }
+    return result;
+  } catch(e) {
+    console.error("readSheet error", tabName, e.message);
+    return [];
+  }
+}
+
+function parseCSV(text) {
+  const rows = []; let row = []; let cell = ""; let inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"' && text[i+1] === '"') { cell += '"'; i++; }
+      else if (c === '"') inQ = false;
+      else cell += c;
+    } else {
+      if (c === '"') inQ = true;
+      else if (c === ',') { row.push(cell.trim()); cell = ""; }
+      else if (c === '\n' || (c === '\r' && text[i+1] === '\n')) {
+        if (c === '\r') i++;
+        row.push(cell.trim()); rows.push(row); row = []; cell = "";
+      } else cell += c;
+    }
+  }
+  if (cell || row.length) { row.push(cell.trim()); rows.push(row); }
+  return rows;
+}
+
+async function readSheetByGid(sheetId, gid) {
+  // Use range starting from row 3 to skip merged title rows
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}&range=A3:ZZ&headers=1`;
+  try {
+    const res = await fetch(url, {mode:"cors"});
+    const text = await res.text();
+    if (!text || !text.includes("google.visualization")) return [];
+    const json = JSON.parse(text.substring(47).slice(0,-2));
+    if (!json.table) return [];
+    const rawRows = json.table.rows || [];
+    const cols = json.table.cols.map(c => c.label || "");
+    const nonEmpty = cols.filter(c => c.trim()).length;
+    console.log(`gid=${gid}: ${rawRows.length} raw rows, ${nonEmpty} cols: [${cols.filter(c=>c).slice(0,4).join(", ")}]`);
+    if (nonEmpty < 2) return [];
+    const result = [];
+    for (const row of rawRows) {
+      if (!row || !row.c) continue;
+      const obj = {};
+      let filled = 0;
+      row.c.forEach((cell, i) => {
+        const col = cols[i]; if (!col) return;
+        const val = cell ? (cell.f != null ? String(cell.f) : cell.v != null ? String(cell.v) : "") : "";
+        obj[col] = val;
+        if (val.trim()) filled++;
+      });
+      if (filled === 0) continue;
+      result.push(obj);
+    }
+    console.log(`gid=${gid}: ${result.length} filtered rows`);
+    if (result.length > 0) console.log(`gid=${gid} first:`, result[0]);
+    return result;
+  } catch(e) {
+    console.error(`gid=${gid} error:`, e.message);
+    return [];
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+async function initDashboard() {
+  document.getElementById("loading").classList.remove("hidden");
+  setSyncStatus("loading","Conectando con Google Drive…");
+
+  // Build company selector
+  const sel = document.getElementById("co-sel");
+  COMPANIES.forEach(co => {
+    const btn = document.createElement("button");
+    btn.className = "co-btn" + (co===curCo?" on":"");
+    btn.textContent = co;
+    btn.onclick = () => setCo(co);
+    sel.appendChild(btn);
+  });
+
+  // Load all companies in parallel
+  await Promise.all(COMPANIES.map(co => loadCompany(co)));
+  await loadFinance();
+
+  document.getElementById("loading").classList.add("hidden");
+  document.getElementById("dashboard").style.display = "block";
+  setSyncStatus("ok", "Datos actualizados desde Drive · " + new Date().toLocaleTimeString("es-PA",{hour:"2-digit",minute:"2-digit"}));
+  renderAll();
+}
+
+async function loadCompany(co) {
+  const id = SHEET_IDS[co];
+
+  // Hardcoded GIDs per company per tab — obtained directly from Google Sheets URLs
+  const GIDS = {
+    EMPSA:  { projects: 494636200,  activities: 1079590415, critical: 1806123531 },
+    GEDANA: { projects: 260434591,  activities: 845236475,  critical: 634852803  },
+    MACAM:  { projects: 371658102,  activities: 1454731151, critical: 174991935  },
+    MARES:  { projects: 906840672,  activities: 1891878507, critical: 1155703028 },
+    WDC:    { projects: 658779685,  activities: 1833813561, critical: 1369087277 },
+  };
+
+  const g = GIDS[co] || {};
+
+  async function loadTab(gid, fallbackName) {
+    if (gid) {
+      console.log(`${co} trying gid=${gid}...`);
+      const rows = await readSheetByGid(id, gid);
+      console.log(`${co} gid=${gid} returned ${rows.length} rows`);
+      if (rows.length > 0) return rows;
+    }
+    console.log(`${co} trying name="${fallbackName}"...`);
+    const rows = await readSheet(id, fallbackName);
+    console.log(`${co} name="${fallbackName}" returned ${rows.length} rows`);
+    return rows;
+  }
+
+  const [projects, activities, critical] = await Promise.all([
+    loadTab(g.projects,  "1 — Índice de Proyectos"),
+    loadTab(g.activities, "2 — Actividades y Responsables"),
+    loadTab(g.critical,  "3 — Fechas Críticas"),
+  ]);
+
+  DATA[co] = { projects, activities, critical };
+  console.log(`${co}: ${projects.length} projects, ${activities.length} activities, ${critical.length} critical`);
+  if (projects.length > 0) console.log(`${co} first project:`, projects[0]);
+}
+
+
+
+
+
+async function readFinanceTab(gid) {
+  const base = `https://docs.google.com/spreadsheets/d/${SHEET_IDS.FINANCE}/gviz/tq?tqx=out:json&gid=${gid}`;
+  for (const range of ["A5:ZZ500","A4:ZZ500","A3:ZZ500","A2:ZZ500"]) {
+    const url = base + `&range=${range}&headers=1`;
+    try {
+      const res = await fetch(url, {mode:"cors"});
+      const text = await res.text();
+      if (!text || !text.includes("google.visualization")) continue;
+      const json = JSON.parse(text.substring(47).slice(0,-2));
+      const cols = (json.table?.cols||[]).map(c=>c.label||"");
+      if (!cols.includes("ID") && !cols.some(c=>c==="Project ID"||c==="Item")) continue;
+      const rows = (json.table?.rows||[]).map(row=>{
+        const obj={};
+        (row.c||[]).forEach((cell,i)=>{
+          if(cols[i]) obj[cols[i]]=cell?(cell.f!=null?String(cell.f):cell.v!=null?String(cell.v):""):"";
+        });
+        obj.__cols = cols.filter(c=>c.trim()).join("|");
+        return obj;
+      }).filter(r=>Object.values(r).some((v,i)=>String(v).trim()&&i<Object.keys(r).length-1));
+      console.log(`Finance gid=${gid} range=${range}: ${rows.length} rows`);
+      return {rows, cols};
+    } catch(e) { continue; }
+  }
+  return {rows:[], cols:[]};
+}
+
+async function loadFinance() {
+  FINANCE_DATA = {};
+  const FIN_GIDS = {
+    EMPSA:  509106695, GEDANA: 1682818021,
+    MACAM:  2328275,   MARES:  1038738033, WDC: 1119893923,
+  };
+  for (const co of COMPANIES) {
+    const {rows, cols} = await readFinanceTab(FIN_GIDS[co]);
+    // Separate sections by ID prefix
+    const obl=[],bnk=[],lit=[],proj=[],cash=[];
+    let cashCols=[];
+    rows.forEach(r=>{
+      const id=String(r["ID"]||r["Project ID"]||r["Item"]||"").trim();
+      if(/^OBL-/.test(id))      obl.push(r);
+      else if(/^BNK-/.test(id)) bnk.push(r);
+      else if(/^LIT-/.test(id)) lit.push(r);
+      else if(/^(PROJ|MACAM|GEDANA|MARES|WDC|PLAN)-/.test(id)) proj.push(r);
+      // Cash flow rows: Item column with month columns
+      else if(id && r.__cols && r.__cols.includes("Jun") || (r["Item"]&&r["Item"].trim())) {
+        if(r["Item"]) cash.push(r);
+      }
+    });
+    // Detect cash flow cols (month columns)
+    if(rows.length>0) {
+      const allCols = (rows[0].__cols||"").split("|");
+      cashCols = allCols.filter(c=>/20\d\d|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/.test(c));
+    }
+    FINANCE_DATA[co] = {obl, bnk, lit, proj, cash, cashCols};
+    console.log(`Finance ${co}: obl=${obl.length} bnk=${bnk.length} lit=${lit.length} proj=${proj.length} cash=${cash.length}`);
+  }
+}
+
+function setSyncStatus(state, msg) {
+  const dot = document.getElementById("sync-dot");
+  const lbl = document.getElementById("sync-label");
+  dot.className = "sync-dot" + (state==="loading"?" loading":"");
+  lbl.textContent = msg;
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const OWNER_COLORS={Cameron:"#b07c2e",Kamilia:"#5c7a4a",Manuel:"#8a5a3c",
+                    Marinés:"#3f6184",JP:"#1a7a4a",Paula:"#993556",
+                    Nuvia:"#854F0B",Rosa:"#993556",Paola:"#7B3F8A"};
+function ownerStyle(o){const c=OWNER_COLORS[o]||"#9a8e7d";return`background:${c}22;color:${c}`;}
+function pctColor(p){const n=parseInt(p)||0;return n>=67?"var(--green)":n>=34?"var(--gold)":"var(--redbright)";}
+function fmtDate(d){if(!d)return"";try{const x=new Date(d);return x.toLocaleDateString("es-PA",{month:"short",day:"numeric"});}catch{return d;}}
+function isOff(s){return s==="Con retraso";}
+function fnClass(team){const t=team||"";return(t.includes("Finance")||t.includes("Operations"))?"ops":"rel";}
+function scls(s){return(s||"").replace(/\s/g,"");}
+function staleLabel(d){
+  if(!d)return{txt:"",cls:""};
+  return{txt:"",cls:""};
+}
+function avatarStyle(n){const c=OWNER_COLORS[n]||"#9a8e7d";return`background:${c}22;color:${c}`;}
+
+// ── COMPANY SWITCH ────────────────────────────────────────────────────────────
+function setCo(co) {
+  curCo = co; calFilter = "all";
+  document.querySelectorAll(".co-btn").forEach(b=>b.classList.toggle("on",b.textContent===co));
+  document.getElementById("co-title").textContent = co + " Projects";
+  renderAll();
+}
+
+// ── RENDER ALL ────────────────────────────────────────────────────────────────
+function renderAll() {
+  renderPulse(); renderKpis(); renderAttn(); renderBoard();
+  if(document.getElementById("view-people").classList.contains("on")) renderPeople();
+  if(document.getElementById("view-cal").classList.contains("on")) renderCal();
+  if(document.getElementById("view-cash").classList.contains("on")) renderCash();
+}
+
+// ── PULSE ─────────────────────────────────────────────────────────────────────
+function renderPulse() {
+  const d = DATA[curCo];
+  if(!d||!d.activities||!d.activities.length){
+    document.getElementById("pulse-text").innerHTML="No hay datos cargados para esta empresa.";
+    return;
+  }
+  const validId3 = id => id && /^(PROJ|PLAN|MACAM|GEDANA|MARES|WDC)/.test(String(id).trim());
+  const acts = d.activities.filter(r=>validId3(r["ID Proyecto"]||r["Project ID"]));
+  let off=0; const offNames=new Set();
+  acts.forEach(r=>{
+    const s=r["Estado"]||r["Status"]||"";
+    const o=r["Responsable"]||r["Owner"]||"";
+    if(isOff(s)){off++;if(o)offNames.add(o);}
+  });
+  const projs = (d.projects||[]).filter(r=>r["ID"]);
+  let txt="";
+  if(off===0) txt=`<strong>Todo en orden</strong> — sin tareas con retraso en ${projs.length} proyectos activos.`;
+  else {
+    const names=[...offNames].join(" y ");
+    txt=`<strong>${off} tarea${off>1?"s":""} con retraso</strong> — ${names?names+" necesitan atención":""} en ${projs.length} proyectos.`;
+  }
+  document.getElementById("pulse-text").innerHTML=txt;
+  document.getElementById("pulse-ts").textContent=new Date().toLocaleDateString("es-PA",{weekday:"short",month:"short",day:"numeric"});
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+function renderKpis() {
+  const d=DATA[curCo]; if(!d) return;
+  const acts=(d.activities||[]).filter(r=>r["ID Proyecto"]||r["Project ID"]);
+  let off=0,rel=0,ops=0;
+  acts.forEach(r=>{
+    const s=r["Estado"]||""; const t=r["Equipo"]||r["Team"]||"";
+    if(isOff(s))off++;
+    if(t==="Finance & Operations"||t==="Finanzas & Operaciones"||t.includes("Finance"))ops++; else rel++;
+  });
+  const projs=(d.projects||[]).filter(r=>r["ID"]);
+  const k=[
+    ["gold",projs.length,"proyectos"],
+    [off>0?"red":"green",off,"con retraso"],
+    ["rel",rel,"tareas Rel & Sales"],
+    ["ops",ops,"tareas Finance & Ops"],
+  ];
+  document.getElementById("kpis").innerHTML=k.map(x=>
+    `<div class="kpi ${x[0]}"><div class="n">${x[1]}</div><div class="l">${x[2]}</div></div>`
+  ).join("");
+}
+
+// ── ATTENTION ─────────────────────────────────────────────────────────────────
+function renderAttn() {
+  const d=DATA[curCo]; if(!d) return;
+  const acts=(d.activities||[]).filter(r=>isOff(r["Estado"]||""));
+  const attn=document.getElementById("attn");
+  if(!acts.length){
+    attn.innerHTML='<div class="attn-head"><span class="attn-dot" style="background:var(--green);box-shadow:0 0 0 3px rgba(92,122,74,.2)"></span><h3 style="color:var(--green)">Sin retrasos</h3></div>';
+    return;
+  }
+  let html=`<div class="attn-head"><span class="attn-dot"></span><h3>Con retraso — ${acts.length} tareas</h3></div><ul>`;
+  html+=acts.slice(0,8).map(r=>{
+    const team=r["Equipo"]||r["Team"]||""; const fn=fnClass(team);
+    return`<li><span class="fpill ${fn}">${fn==="rel"?"Rel & Sales":"Finance & Ops"}</span>${r["Descripción de la Tarea"]||r["Task Description"]||""}<span class="proj">${r["Responsable"]||r["Owner"]||"—"} · ${(r["Nombre del Proyecto"]||r["Project Name"]||"").replace(/ —.*/,"")}</span></li>`;
+  }).join("");
+  html+="</ul>"; attn.innerHTML=html;
+}
+
+// ── BOARD ─────────────────────────────────────────────────────────────────────
+function renderBoard() {
+  const d=DATA[curCo]; if(!d){document.getElementById("board").innerHTML="";return;}
+  console.log("renderBoard:", curCo, "raw projects:", (d.projects||[]).length);
+  if((d.projects||[]).length>0) {
+    const fp = d.projects[0];
+    console.log("First project keys:", Object.keys(fp));
+    console.log("First project:", fp);
+  }
+  const validId = id => id && /^(PROJ|PLAN|MACAM|GEDANA|MARES|WDC)/.test(String(id).trim());
+  const projs=(d.projects||[]).filter(r=>validId(r["ID"]||r["ID Proyecto"]));
+  console.log("Filtered projs:", projs.length);
+  const acts=(d.activities||[]).filter(r=>validId(r["ID Proyecto"]||r["Project ID"]));
+  if(!projs.length){document.getElementById("board").innerHTML='<p style="color:var(--ink3);font-style:italic;padding:20px">No hay proyectos cargados.</p>';return;}
+  let html="";
+  projs.forEach((p,i)=>{
+    const pid=(p["ID"]||p["ID Proyecto"]||"").trim();
+    let steps=acts.filter(r=>(r["ID Proyecto"]||"")==pid);
+    if(filter==="ops")steps=steps.filter(r=>{const t=r["Equipo"]||r["Team"]||"";return t==="Finance & Operations"||t==="Finanzas & Operaciones"||t.toLowerCase().includes("finance");});
+    if(filter==="rel")steps=steps.filter(r=>!(r["Equipo"]||r["Team"]||"").includes("Finance"));
+    if(filter==="off")steps=steps.filter(r=>isOff(r["Estado"]||""));
+    if(filter!=="all"&&!steps.length&&acts.filter(r=>(r["ID Proyecto"]||r["Project ID"]||"")==pid).length) return;
+    const allSteps=acts.filter(r=>(r["ID Proyecto"]||"")==pid);
+    const offCount=allSteps.filter(r=>isOff(r["Estado"]||"")).length;
+    const pct=parseInt(p["% Avance"]||p["%Avance"]||p["% Progress"]||"0")||0;
+    const name=p["Nombre del Proyecto"]||p["Project Name"]||p["Nombre"]||pid;
+    const notes=p["Notas / Contexto"]||p["Notes / Contexto"]||p["Notes"]||"";
+    const openClass=offCount||filter!=="all"?"open":"";
+    html+=`<div class="proj ${openClass} ${offCount?"has-red":""}" id="pb${i}">
+      <div class="phead" onclick="document.getElementById('pb${i}').classList.toggle('open')">
+        <span class="chev">▶</span>
+        <span style="flex:1;min-width:0">
+          <span class="pname">${name}</span>
+          ${notes?`<div class="pcontext">${notes}</div>`:""}
+        </span>
+        <span class="pctblock">
+          <span class="pct-bar"><i style="width:${pct}%;background:${pctColor(pct)}"></i></span>
+          <span class="pct-n" style="color:${pctColor(pct)}">${pct}%</span>
+        </span>
+        <span class="pmeta">${offCount?`<span class="chip red">${offCount} con retraso</span>`:""}</span>
+      </div>`;
+    if(steps.length){
+      html+="<div class='steps'>";
+      steps.forEach(s=>{
+        const team=s["Equipo"]||s["Team"]||""; const fn=fnClass(team);
+        const task=s["Descripción de la Tarea"]||s["Task Description"]||"";
+        const owner=s["Responsable"]||s["Owner"]||"";
+        const due=s["Fecha Límite"]||s["Due Date"]||"";
+        const status=s["Estado"]||s["Status"]||"";
+        const note=s["Notas / Comentarios"]||s["Notes"]||"";
+        html+=`<div class="step">
+          <span class="fnbar ${fn}"></span>
+          <span><span class="stask">${task}</span>${note?`<div class="snote">${note}</div>`:""}</span>
+          <span class="sright">
+            <span class="srow">${owner?`<span class="owner" style="${ownerStyle(owner)}">${owner}</span>`:""} ${due?`<span class="due">${fmtDate(due)}</span>`:""}</span>
+            <span class="status ${scls(status)}">${status||"—"}</span>
+          </span>
+        </div>`;
+      });
+      html+="</div>";
+    } else {
+      html+=`<div class="steps"><div class="empty">${pct}% completado · ${notes||"Sin tareas detalladas."}</div></div>`;
+    }
+    html+="</div>";
+  });
+  document.getElementById("board").innerHTML=html||'<p style="color:var(--ink3);font-style:italic;padding:20px">Sin resultados para este filtro.</p>';
+}
+
+document.getElementById("filter").addEventListener("click",e=>{
+  if(e.target.tagName!=="BUTTON")return;
+  filter=e.target.dataset.f;
+  [...e.currentTarget.children].forEach(b=>b.classList.toggle("on",b===e.target));
+  renderBoard();
+});
+
+// ── PEOPLE ────────────────────────────────────────────────────────────────────
+function renderPeople() {
+  const d=DATA[curCo]; if(!d){document.getElementById("person-grid").innerHTML="";return;}
+  const people={};
+  (d.activities||[]).forEach(r=>{
+    const name=r["Responsable"]||r["Owner"]||"Sin asignar";
+    if(!people[name])people[name]=[];
+    people[name].push(r);
+  });
+  const sorted=Object.entries(people).sort((a,b)=>{
+    return b[1].filter(r=>isOff(r["Estado"]||"")).length - a[1].filter(r=>isOff(r["Estado"]||"")).length;
+  });
+  let html="";
+  sorted.forEach(([name,items])=>{
+    const off=items.filter(r=>isOff(r["Estado"]||"")).length;
+    const done=items.filter(r=>(r["Estado"]||"")==="Completado").length;
+    const pending=items.length-done;
+    const initials=name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+    html+=`<div class="person-card ${off?"has-red":""}">
+      <div class="person-head">
+        <div class="person-avatar" style="${avatarStyle(name)}">${initials}</div>
+        <span class="person-name">${name}</span>
+        <span class="person-counts">
+          ${off?`<span class="pcount red">${off} retraso</span>`:""}
+          ${pending?`<span class="pcount gray">${pending} pendiente</span>`:""}
+          ${done?`<span class="pcount green">${done} listo</span>`:""}
+        </span>
+      </div>
+      <div class="person-items">`;
+    [...items.filter(r=>isOff(r["Estado"]||"")),
+     ...items.filter(r=>!isOff(r["Estado"]||"")&&(r["Estado"]||"")!=="Completado"),
+     ...items.filter(r=>(r["Estado"]||"")==="Completado")
+    ].forEach(r=>{
+      const fn=fnClass(r["Equipo"]||r["Team"]||"");
+      const st=r["Estado"]||"";
+      html+=`<div class="pitem">
+        <div class="pitem-bar ${fn}"></div>
+        <div style="flex:1;min-width:0">
+          <div class="pitem-task">${r["Descripción de la Tarea"]||r["Task Description"]||""}</div>
+          <div class="pitem-proj">${(r["Nombre del Proyecto"]||r["Project Name"]||"").replace(/ —.*/,"")}</div>
+        </div>
+        <span class="pitem-status ${scls(st)}">${st}</span>
+      </div>`;
+    });
+    html+="</div></div>";
+  });
+  document.getElementById("person-grid").innerHTML=html||"<p style='color:var(--ink3);padding:20px;font-style:italic'>Sin datos.</p>";
+}
+
+// ── CALENDAR ──────────────────────────────────────────────────────────────────
+function buildCalFilter() {
+  const d=DATA[curCo]; if(!d) return;
+  const acts=(d.activities||[]).filter(r=>r["Fecha Límite"]||r["Due Date"]);
+  const projs=[...new Set(acts.map(r=>r["Nombre del Proyecto"]||r["Project Name"]||""))].filter(Boolean);
+  const el=document.getElementById("cal-filter"); el.innerHTML="";
+  if(!projs.length) return;
+  const lbl=document.createElement("span"); lbl.className="cal-filter-label"; lbl.textContent="Filtrar por proyecto:"; el.appendChild(lbl);
+  const makeBtn=(name,label)=>{
+    const btn=document.createElement("button"); btn.className="cal-pill"+(calFilter===name?" on":"");
+    btn.textContent=label; btn.addEventListener("click",()=>{calFilter=name;buildCalFilter();renderCal();}); el.appendChild(btn);
+  };
+  makeBtn("all","Todos");
+  projs.forEach(p=>makeBtn(p,(p.replace(/ —.*/,"")).substring(0,20)));
+}
+
+function calMove(d){calRef=new Date(calRef.getFullYear(),calRef.getMonth()+d,1);renderCal();}
+
+function renderCal() {
+  buildCalFilter();
+  const d=DATA[curCo]; if(!d) return;
+  let events=(d.activities||[]).filter(r=>(r["Fecha Límite"]||r["Due Date"])&&(r["ID Proyecto"]||r["Project ID"])).map(r=>({
+    date: r["Fecha Límite"]||r["Due Date"]||"",
+    proj: r["Nombre del Proyecto"]||r["Project Name"]||"",
+    task: r["Descripción de la Tarea"]||r["Task Description"]||"",
+    owner: r["Responsable"]||r["Owner"]||"",
+    fn: fnClass(r["Equipo"]||r["Team"]||""),
+    off: isOff(r["Estado"]||"")
+  }));
+  if(calFilter!=="all") events=events.filter(e=>e.proj===calFilter);
+
+  const y=calRef.getFullYear(), m=calRef.getMonth();
+  document.getElementById("cal-title").textContent=calRef.toLocaleDateString("es-PA",{month:"long",year:"numeric"});
+  const first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
+  const today=new Date(); const isThisMonth=today.getFullYear()===y&&today.getMonth()===m;
+  const dow=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+  let html=dow.map(d=>`<div class="cal-dow">${d}</div>`).join("");
+  for(let i=0;i<first;i++) html+='<div class="cal-cell blank"></div>';
+  for(let day=1;day<=days;day++){
+    const ds=`${y}-${String(m+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+    const evs=events.filter(e=>{
+      if(!e.date) return false;
+      const ed = e.date instanceof Date ? e.date.toISOString().split("T")[0] :
+                 typeof e.date === "string" ? e.date.split("T")[0].split(" ")[0] : "";
+      return ed===ds;
+    });
+    const todayCls=(isThisMonth&&today.getDate()===day)?"today":"";
+    html+=`<div class="cal-cell ${todayCls}"><span class="cal-date">${day}</span>`;
+    html+=evs.map(e=>`<div class="ev ${e.fn} ${e.off?"off":""}" title="${e.task}">
+      ${e.task.length>28?e.task.slice(0,26)+"…":e.task}
+      <span class="evp">${e.proj.replace(/ —.*/,"")}</span>
+      ${e.owner?`<span class="evown">${e.owner}</span>`:""}
+    </div>`).join("");
+    html+="</div>";
+  }
+  document.getElementById("cal-grid").innerHTML=html;
+}
+
+// ── CASHFLOW ──────────────────────────────────────────────────────────────────
+function renderCash() {
+  const fd = FINANCE_DATA[curCo];
+  const kpisEl = document.getElementById("cash-kpis");
+  const tableEl = document.getElementById("cash-table");
+
+  if (!fd || (!fd.obl.length && !fd.bnk.length && !fd.lit.length && !fd.proj.length && !fd.cash.length)) {
+    kpisEl.innerHTML = "";
+    tableEl.innerHTML = `<tr><td style="padding:20px;font-style:italic;color:var(--ink3)">Sin datos financieros para ${curCo}. JP debe completar Finance_GRUPO en Drive.</td></tr>`;
+    return;
+  }
+
+  // KPIs
+  kpisEl.innerHTML = `
+    ${fd.obl.length?`<div class="kpi gold"><div class="n">${fd.obl.length}</div><div class="l">obligaciones</div></div>`:""}
+    ${fd.bnk.length?`<div class="kpi red"><div class="n">${fd.bnk.length}</div><div class="l">exposición bancaria</div></div>`:""}
+    ${fd.lit.length?`<div class="kpi red"><div class="n">${fd.lit.length}</div><div class="l">casos legales</div></div>`:""}
+    ${fd.proj.length?`<div class="kpi ops"><div class="n">${fd.proj.length}</div><div class="l">compromisos proyectos</div></div>`:""}
+  `;
+
+  let html = "";
+
+  // Section renderer helper
+  function renderSection(title, rows, colOrder) {
+    if (!rows.length) return "";
+    const keys = colOrder.filter(c=>c!=="__cols");
+    let t = `<div style="margin:18px 0 6px"><strong style="font-family:'Fraunces';font-size:15px;color:var(--ink)">${title}</strong></div>`;
+    t += `<div style="overflow-x:auto"><table id="cash-table" style="border-collapse:collapse;width:100%;font-size:13px;background:var(--paper);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)">`;
+    t += `<thead><tr>${keys.map(c=>`<th style="padding:8px 10px;text-align:left;font-family:'Fraunces';font-size:12px;color:var(--ink2);background:#f3ecdf;border-bottom:1px solid var(--line)">${c}</th>`).join("")}</tr></thead><tbody>`;
+    rows.forEach((row,i)=>{
+      const bg = i%2===0?"var(--paper)":"#faf4e9";
+      t += `<tr style="background:${bg}">`;
+      keys.forEach(c=>{
+        const v=row[c]||"";
+        const isAmt=(c.includes("Amount")||c.includes("USD"))&&!isNaN(parseFloat(v))&&v!=="";
+        const isTbc=v==="TBC";
+        t += `<td style="padding:7px 10px;border-bottom:1px solid #efe7d7;text-align:${isAmt?"right":"left"};color:${isTbc?"var(--ink3)":"var(--ink)"};font-style:${isTbc?"italic":"normal"}">${isAmt?"$"+parseFloat(v).toLocaleString("en-US",{minimumFractionDigits:2}):v}</td>`;
+      });
+      t += "</tr>";
+    });
+    t += "</tbody></table></div>";
+    return t;
+  }
+
+  // A. General Obligations
+  const oblCols = ["ID","Description","Category","Counterparty","Amount (USD)","Frequency","Next Due Date","Status","Notes"];
+  html += renderSection("A. Obligaciones Generales", fd.obl, oblCols.filter(c=>fd.obl[0]&&c in fd.obl[0]));
+
+  // B. Projected Cash Flow
+  if (fd.cash.length) {
+    const cashKeyCols = ["Item",...(fd.cashCols||[])].filter(c=>fd.cash[0]&&c in fd.cash[0]);
+    html += renderSection("B. Flujo de Caja Proyectado", fd.cash, cashKeyCols);
+  }
+
+  // C. Legal & Banking Exposure
+  const lbRows = [...fd.bnk,...fd.lit];
+  if (lbRows.length) {
+    const lbCols = ["ID","Description","Type","Counterparty","Amount at Risk (USD)","Due / Hearing","Status","Notes"];
+    html += renderSection("C. Exposición Legal y Bancaria", lbRows, lbCols.filter(c=>lbRows[0]&&c in lbRows[0]));
+  }
+
+  // D. Project Commitments
+  if (fd.proj.length) {
+    const projCols = ["Project ID","Project Name","Commitment","Est. Amount (USD)","Expected Date","Prob. (%)","Status","Notes"];
+    html += renderSection("D. Compromisos de Proyectos", fd.proj, projCols.filter(c=>fd.proj[0]&&c in fd.proj[0]));
+  }
+
+  tableEl.outerHTML = `<div id="cash-table-wrapper">${html}</div>`;
+  // Re-attach reference
+  const wrapper = document.getElementById("cash-table-wrapper");
+  if(wrapper) wrapper.id = "cash-table";
+}
+
+// ── VIEW SWITCHER ─────────────────────────────────────────────────────────────
+function switchView(v) {
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
+  document.getElementById("view-"+v).classList.add("on");
+  document.querySelectorAll(".viewtabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
+  if(v==="cal") renderCal();
+  if(v==="cash") renderCash();
+  if(v==="people") renderPeople();
+}
+</script>
+</body>
+</html
+#login-screen.hidden{display:none}
+.login-box{background:#fbf8f2;border-radius:16px;padding:40px 48px;max-width:360px;width:90%;text-align:center}
+.login-box h2{font-family:'Fraunces',Georgia,serif;font-size:26px;color:#1B3A5C;margin-bottom:6px}
+.login-box p{font-size:13px;color:#9a8e7d;margin-bottom:24px;font-style:italic}
+.login-box input{width:100%;padding:12px 16px;border:1px solid #e3dac9;border-radius:10px;font-size:15px;font-family:inherit;box-sizing:border-box;margin-bottom:12px;outline:none}
+.login-box input:focus{border-color:#2E6DA4}
+.login-box button{width:100%;padding:13px;background:#1B3A5C;color:#fff;border:0;border-radius:10px;font-size:15px;font-family:'Fraunces',Georgia,serif;cursor:pointer;font-weight:500}
+.login-box button:hover{background:#2E6DA4}
+.login-error{color:#A32D2D;font-size:13px;margin-top:6px;display:none}
+.login-logo{font-family:'Fraunces',Georgia,serif;font-size:32px;color:#fff;font-weight:600;letter-spacing:-0.02em}
+.login-sub{font-size:13px;color:#D6E4F0;font-style:italic}
+
+/* ── Loading ── */
+#loading{position:fixed;inset:0;background:#f4efe7;display:flex;align-items:center;justify-content:center;z-index:9998;flex-direction:column;gap:12px}
+#loading.hidden{display:none}
+.spinner{width:36px;height:36px;border:3px solid #e3dac9;border-top-color:#2E6DA4;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-family:'Fraunces',Georgia,serif;color:#5d5347;font-size:15px}
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Newsreader:ital,wght@0,400;0,500;1,400;1,500&display=swap');
+:root{
+  --bg:#f4efe7;--paper:#fbf8f2;--ink:#2a2420;--ink2:#5d5347;--ink3:#9a8e7d;--line:#e3dac9;
+  --gold:#b07c2e;--goldsoft:#f3e6cd;--green:#5c7a4a;--greensoft:#e6efdd;
+  --red:#a8492f;--redsoft:#f4e0d8;--redbright:#c0392b;
+  --blue:#3f6184;--bluesoft:#dee7f0;--rel:#8a5a3c;--relsoft:#f0e2d6;
+  --ops:#3f6184;--opssoft:#dee7f0;
+  --shadow:0 1px 3px rgba(60,45,25,.08),0 8px 28px rgba(60,45,25,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Newsreader',Georgia,serif;line-height:1.5;min-height:100vh;
+  background-image:radial-gradient(circle at 12% 8%,rgba(176,124,46,.05),transparent 42%),
+  radial-gradient(circle at 88% 92%,rgba(63,97,132,.05),transparent 45%)}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
+.hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:4px}
+.eyebrow{font-style:italic;color:var(--gold);font-size:15px;margin-bottom:4px}
+h1{font-family:'Fraunces';font-weight:600;font-size:clamp(26px,4vw,38px);line-height:1.02;letter-spacing:-.01em}
+.co-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.co-label{font-size:12px;color:var(--ink3);font-style:italic}
+.co-sel{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.co-btn{font-family:'Fraunces';font-weight:500;font-size:13px;border:1px solid var(--line);
+  background:var(--paper);color:var(--ink2);padding:6px 14px;border-radius:99px;cursor:pointer;transition:.15s;box-shadow:var(--shadow)}
+.co-btn.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.co-btn:hover:not(.on){background:var(--goldsoft);border-color:var(--gold)}
+.pulse{background:linear-gradient(135deg,var(--ink) 0%,#3d2e26 100%);border-radius:16px;padding:16px 22px;margin:18px 0 6px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:var(--shadow)}
+.pulse-icon{font-size:22px;flex-shrink:0}
+.pulse-text{flex:1;font-size:15px;color:#e8dfd0;line-height:1.5}
+.pulse-text strong{color:#fff;font-family:'Fraunces';font-weight:600}
+.pulse-ts{font-size:12px;color:var(--ink3);font-style:italic;flex-shrink:0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:11px;margin:16px 0}
+.kpi{background:var(--paper);border:1px solid var(--line);border-radius:13px;padding:13px 15px;box-shadow:var(--shadow)}
+.kpi .n{font-family:'Fraunces';font-weight:600;font-size:26px;line-height:1}
+.kpi .l{font-size:12px;color:var(--ink2);margin-top:5px}
+.kpi.gold .n{color:var(--gold)}.kpi.red .n{color:var(--redbright)}.kpi.green .n{color:var(--green)}
+.kpi.rel .n{color:var(--rel)}.kpi.ops .n{color:var(--ops)}
+.kpi.red{border-color:#e8cdc2;background:linear-gradient(160deg,#fdf4f1,var(--paper) 60%)}
+.attn{background:linear-gradient(160deg,#fae8e2,var(--paper) 65%);border:1.5px solid #e0b8aa;border-radius:16px;padding:18px 20px;margin-bottom:12px;box-shadow:var(--shadow)}
+.attn-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.attn-dot{width:12px;height:12px;border-radius:50%;background:var(--redbright);box-shadow:0 0 0 3px rgba(192,57,43,.2);flex-shrink:0}
+.attn h3{font-family:'Fraunces';font-weight:600;font-size:18px;color:var(--redbright)}
+.attn ul{list-style:none;display:flex;flex-direction:column;gap:7px}
+.attn li{display:flex;align-items:center;gap:9px;font-size:14px;background:var(--paper);border:1px solid #e8ccc2;border-left:4px solid var(--redbright);border-radius:9px;padding:9px 13px}
+.attn li .proj{font-style:italic;color:var(--ink3);font-size:12.5px;margin-left:auto;white-space:nowrap}
+.fpill{font-size:10.5px;padding:2px 9px;border-radius:99px;font-family:'Fraunces';font-weight:500;white-space:nowrap}
+.fpill.rel{background:var(--relsoft);color:var(--rel)}.fpill.ops{background:var(--opssoft);color:var(--ops)}
+.viewtabs{display:flex;gap:6px;margin:20px 0 6px;flex-wrap:wrap}
+.viewtabs button{font-family:'Fraunces';font-weight:500;font-size:15px;border:1px solid var(--line);background:var(--paper);color:var(--ink2);padding:9px 20px;border-radius:11px;cursor:pointer;transition:.15s;box-shadow:var(--shadow)}
+.viewtabs button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.view{display:none}.view.on{display:block}
+.controls{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:14px 0}
+.seg{display:flex;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:4px;box-shadow:var(--shadow);flex-wrap:wrap}
+.seg button{font-family:'Newsreader';font-size:14px;border:0;background:transparent;color:var(--ink2);padding:7px 13px;border-radius:8px;cursor:pointer;transition:.15s}
+.seg button.on{background:var(--ink);color:var(--paper)}
+.proj{background:var(--paper);border:1px solid var(--line);border-radius:16px;margin-bottom:12px;box-shadow:var(--shadow);overflow:hidden}
+.proj.has-red{border-color:#ddb8ae}
+.phead{padding:16px 18px;cursor:pointer;display:flex;align-items:center;gap:14px}
+.phead:hover{background:#f7f1e6}
+.chev{font-size:13px;color:var(--ink3);transition:.2s;flex-shrink:0}
+.proj.open .chev{transform:rotate(90deg)}
+.pname{font-family:'Fraunces';font-weight:600;font-size:18px;flex:1;min-width:0}
+.pctblock{flex:0 0 140px;display:flex;align-items:center;gap:9px}
+.pct-bar{flex:1;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.pct-bar i{display:block;height:100%;border-radius:99px;transition:width .4s}
+.pct-n{font-family:'Fraunces';font-weight:600;font-size:14px;min-width:34px;text-align:right}
+.pmeta{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.chip{font-size:11px;padding:3px 10px;border-radius:99px;font-style:italic;font-weight:500}
+.chip.red{background:var(--redsoft);color:var(--redbright);border:1px solid #e8c0b4}
+.chip.gray{background:#eee7da;color:var(--ink3)}
+.stale{font-size:11px;color:var(--ink3);font-style:italic;padding:2px 8px;background:#f0e8db;border-radius:99px;border:1px solid var(--line)}
+.stale.warn{background:#fdf0e8;color:var(--gold);border-color:#e8c88a}
+.pcontext{font-size:13px;color:var(--ink3);font-style:italic;margin-top:2px}
+.steps{border-top:1px solid var(--line);display:none}
+.proj.open .steps{display:block}
+.step{display:grid;grid-template-columns:8px 1fr auto;gap:12px;align-items:start;padding:12px 18px;border-bottom:1px solid #efe7d7}
+.step:last-child{border-bottom:0}
+.step:hover{background:#faf6ee}
+.fnbar{width:6px;border-radius:99px;align-self:stretch;min-height:20px;margin-top:2px;flex-shrink:0}
+.fnbar.rel{background:var(--rel)}.fnbar.ops{background:var(--ops)}
+.stask{font-size:14.5px;line-height:1.35}
+.snote{font-size:12.5px;color:var(--ink3);font-style:italic;margin-top:3px}
+.sright{display:flex;flex-direction:column;align-items:flex-end;gap:5px;white-space:nowrap}
+.srow{display:flex;align-items:center;gap:6px}
+.owner{font-size:11.5px;padding:3px 10px;border-radius:99px;font-family:'Fraunces';font-weight:500}
+.due{font-size:12px;color:var(--ink3);font-style:italic}
+.status{font-size:11.5px;padding:3px 11px;border-radius:99px;font-family:'Fraunces';font-weight:500}
+.status.Completado{background:var(--greensoft);color:var(--green)}
+.status.Encurso{background:#e4eed9;color:var(--green)}
+.status.Conretraso{background:var(--redsoft);color:var(--redbright);font-weight:600;border:1px solid #e8bfb4}
+.status.Noiniciado{background:#eee7da;color:var(--ink3)}
+.status.Enpausa{background:#faeeda;color:#854F0B}
+.empty{padding:16px 18px;font-style:italic;color:var(--ink3);font-size:13.5px}
+.person-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:4px}
+.person-card{background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+.person-card.has-red{border-color:#ddb8ae}
+.person-head{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+.person-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces';font-weight:600;font-size:16px;flex-shrink:0}
+.person-name{font-family:'Fraunces';font-weight:600;font-size:17px;flex:1}
+.person-counts{display:flex;gap:6px}
+.pcount{font-size:11px;padding:2px 8px;border-radius:99px;font-family:'Fraunces';font-weight:500}
+.pcount.red{background:var(--redsoft);color:var(--redbright)}
+.pcount.green{background:var(--greensoft);color:var(--green)}
+.pcount.gray{background:#eee7da;color:var(--ink3)}
+.person-items{padding:10px 0}
+.pitem{padding:9px 18px;display:flex;align-items:flex-start;gap:10px;border-bottom:1px solid #f0e8db}
+.pitem:last-child{border-bottom:0}
+.pitem:hover{background:#faf6ee}
+.pitem-bar{width:5px;border-radius:99px;align-self:stretch;min-height:16px;margin-top:2px;flex-shrink:0}
+.pitem-bar.rel{background:var(--rel)}.pitem-bar.ops{background:var(--ops)}
+.pitem-task{font-size:13.5px;line-height:1.35;flex:1}
+.pitem-proj{font-size:11.5px;color:var(--ink3);font-style:italic;margin-top:2px}
+.pitem-status{font-size:11px;padding:2px 8px;border-radius:99px;font-family:'Fraunces';font-weight:500;white-space:nowrap;flex-shrink:0;margin-top:2px}
+.pitem-status.Conretraso{background:var(--redsoft);color:var(--redbright)}
+.pitem-status.Completado{background:var(--greensoft);color:var(--green)}
+.pitem-status.Encurso{background:#e4eed9;color:var(--green)}
+.pitem-status.Noiniciado{background:#eee7da;color:var(--ink3)}
+.cal-filter{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 4px;align-items:center}
+.cal-filter-label{font-size:12px;color:var(--ink3);font-style:italic;margin-right:2px}
+.cal-pill{font-family:'Fraunces';font-weight:500;font-size:12px;border:1px solid var(--line);background:var(--paper);color:var(--ink2);padding:4px 12px;border-radius:99px;cursor:pointer;transition:.15s;box-shadow:var(--shadow);white-space:nowrap}
+.cal-pill:hover:not(.on){background:var(--goldsoft);border-color:var(--gold)}
+.cal-pill.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.cal-nav{display:flex;align-items:center;gap:14px;margin:18px 0 14px}
+.cal-nav button{border:1px solid var(--line);background:var(--paper);color:var(--ink);font-family:'Fraunces';font-size:18px;width:40px;height:40px;border-radius:11px;cursor:pointer;box-shadow:var(--shadow)}
+.cal-nav button:hover{background:var(--gold);color:#fff}
+.cal-nav h2{font-family:'Fraunces';font-weight:600;font-size:24px;letter-spacing:-.01em}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-dow{text-align:center;font-family:'Fraunces';font-weight:600;font-size:12px;color:var(--ink3);padding:6px 0;text-transform:uppercase;letter-spacing:.05em}
+.cal-cell{background:var(--paper);border:1px solid var(--line);border-radius:11px;min-height:96px;padding:7px 8px;display:flex;flex-direction:column;gap:4px}
+.cal-cell.blank{background:transparent;border:0}
+.cal-cell.today{border-color:var(--gold);box-shadow:0 0 0 2px var(--goldsoft)}
+.cal-date{font-family:'Fraunces';font-weight:600;font-size:13px;color:var(--ink2)}
+.cal-cell.today .cal-date{color:var(--gold)}
+.ev{font-size:11px;line-height:1.25;padding:3px 6px;border-radius:6px;border-left:3px solid;cursor:default}
+.ev.rel{background:var(--relsoft);border-color:var(--rel);color:#5e3d28}
+.ev.ops{background:var(--opssoft);border-color:var(--ops);color:#2c4660}
+.ev.off{outline:2px solid var(--redbright);outline-offset:-1px}
+.ev .evp{font-style:italic;opacity:.7;display:block;font-size:10px}
+.ev .evown{font-weight:600;font-size:10px;display:block;margin-top:1px}
+.cal-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:12.5px;color:var(--ink2)}
+.cal-legend span{display:inline-flex;align-items:center;gap:7px}
+.ldot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+.cash-intro{font-size:15px;color:var(--ink2);margin-bottom:14px;line-height:1.6;max-width:720px}
+#cash-table{border-collapse:collapse;width:100%;font-size:13px;background:var(--paper);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+#cash-table th,#cash-table td{padding:8px 11px;text-align:right;border-bottom:1px solid #efe7d7;white-space:nowrap}
+#cash-table th:first-child,#cash-table td:first-child{text-align:left;font-family:'Newsreader'}
+#cash-table thead th{font-family:'Fraunces';font-weight:600;font-size:12px;color:var(--ink2);background:#f3ecdf}
+#cash-table .grp{font-family:'Fraunces';font-weight:600;color:var(--ink);background:#faf4e9}
+#cash-table .in td{color:var(--green)}
+#cash-table .out td{color:var(--red)}
+#cash-table .bal td{font-family:'Fraunces';font-weight:600;border-top:2px solid var(--line)}
+#cash-table .bal td.neg{color:var(--redbright)}
+#cash-table .bal td.pos{color:var(--green)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin:14px 0 4px;font-size:13px;color:var(--ink2)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.sync-bar{font-size:12px;color:var(--ink3);font-style:italic;margin-top:8px;display:flex;align-items:center;gap:8px}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
+.sync-dot.loading{background:var(--gold);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+footer{margin-top:38px;text-align:center;font-size:13px;color:var(--ink3);font-style:italic}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-logo">EMPSA</div>
+  <div class="login-sub">command view · acceso restringido</div>
+  <div class="login-box">
+    <h2>Bienvenido</h2>
+    <p>Ingresa la contraseña para acceder al dashboard</p>
+    <input type="password" id="pwd-input" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button onclick="doLogin()">Ingresar</button>
+    <div class="login-error" id="login-error">Contraseña incorrecta</div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text">Cargando datos desde Drive…</div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="wrap" id="dashboard" style="display:none">
+  <div class="hdr">
+    <div>
+      <div class="eyebrow">EMPSA Group · command view</div>
+      <h1 id="co-title">EMPSA</h1>
+    </div>
+    <div class="co-wrap">
+      <span class="co-label">Empresa</span>
+      <div class="co-sel" id="co-sel"></div>
+    </div>
+  </div>
+  <div class="sync-bar"><span class="sync-dot" id="sync-dot"></span><span id="sync-label">Conectando…</span></div>
+  <div class="pulse" id="pulse"><span class="pulse-icon">⚡</span><span class="pulse-text" id="pulse-text">Cargando…</span><span class="pulse-ts" id="pulse-ts"></span></div>
+  <div class="kpis" id="kpis"></div>
+  <div class="attn" id="attn"></div>
+  <div class="viewtabs">
+    <button data-v="board" class="on" onclick="switchView('board')">Projects</button>
+    <button data-v="people" onclick="switchView('people')">By person</button>
+    <button data-v="cal" onclick="switchView('cal')">Calendar</button>
+    <button data-v="cash" onclick="switchView('cash')">Cashflow</button>
+  </div>
+  <div class="view on" id="view-board">
+    <div class="legend">
+      <span><span class="ldot" style="background:var(--ops)"></span>Finance &amp; Operations</span>
+      <span><span class="ldot" style="background:var(--rel)"></span>Relationships &amp; Sales</span>
+    </div>
+    <div class="controls"><div class="seg" id="filter">
+      <button data-f="all" class="on">Todos</button>
+      <button data-f="ops">Finance &amp; Ops</button>
+      <button data-f="rel">Rel &amp; Sales</button>
+      <button data-f="off">Con retraso</button>
+    </div></div>
+    <div id="board"></div>
+  </div>
+  <div class="view" id="view-people"><div class="person-grid" id="person-grid"></div></div>
+  <div class="view" id="view-cal">
+    <div class="cal-nav">
+      <button onclick="calMove(-1)">‹</button>
+      <h2 id="cal-title"></h2>
+      <button onclick="calMove(1)">›</button>
+    </div>
+    <div class="cal-filter" id="cal-filter"></div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-legend">
+      <span><span class="ldot" style="background:var(--ops)"></span>Finance &amp; Ops</span>
+      <span><span class="ldot" style="background:var(--rel)"></span>Rel &amp; Sales</span>
+    </div>
+  </div>
+  <div class="view" id="view-cash">
+    <p class="cash-intro">Obligaciones y compromisos financieros del período. Los datos se leen directamente desde Finance_GRUPO en Drive.</p>
+    <div id="cash-kpis" class="kpis"></div>
+    <div style="overflow-x:auto"><table id="cash-table"></table></div>
+  </div>
+  <footer>EMPSA Group · Command View · datos en tiempo real desde 
+</body>
+</html>
